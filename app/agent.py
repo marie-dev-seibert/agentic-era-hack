@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import datetime
 import os
-from zoneinfo import ZoneInfo
+import time
+from google import genai
+from google.genai import types
 
 import google.auth
 from google.adk.agents import Agent
@@ -24,43 +25,50 @@ os.environ.setdefault("GOOGLE_CLOUD_PROJECT", project_id)
 os.environ.setdefault("GOOGLE_CLOUD_LOCATION", "global")
 os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "True")
 
-
-def get_weather(query: str) -> str:
-    """Simulates a web search. Use it get information on weather.
-
-    Args:
-        query: A string containing the location to get weather information for.
-
-    Returns:
-        A string with the simulated weather information for the queried location.
-    """
-    if "sf" in query.lower() or "san francisco" in query.lower():
-        return "It's 60 degrees and foggy."
-    return "It's 90 degrees and sunny."
+genai_client = genai.Client()
 
 
-def get_current_time(query: str) -> str:
-    """Simulates getting the current time for a city.
+def generate_image(prompt: str) -> str:
+    """Generates images using the Imagen model based on a descriptive prompt.
 
     Args:
-        city: The name of the city to get the current time for.
+        prompt: The detailed text description of the image to generate.
 
     Returns:
-        A string with the current time information.
+        A string indicating success and the paths to the saved images, or an
+        error message.
     """
-    if "sf" in query.lower() or "san francisco" in query.lower():
-        tz_identifier = "America/Los_Angeles"
-    else:
-        return f"Sorry, I don't have timezone information for query: {query}."
+    print(f"Tool 'generate_image' called with prompt: '{prompt}'")
+    try:
+        # Create a directory to save images if it doesn't exist
+        output_dir = "generated_images"
+        os.makedirs(output_dir, exist_ok=True)
 
-    tz = ZoneInfo(tz_identifier)
-    now = datetime.datetime.now(tz)
-    return f"The current time for query {query} is {now.strftime('%Y-%m-%d %H:%M:%S %Z%z')}"
+        response = genai_client.models.generate_images(
+            model='imagen-4.0-generate-001', 
+            prompt=prompt,
+            config=types.GenerateImagesConfig()
+        )
+
+        generated_image = response.generated_images[0]
+
+        # Create a unique filename
+        timestamp = int(time.time())
+        filename = f"{prompt.replace(' ', '_')[:30]}_{timestamp}.png"
+        filepath = os.path.join(output_dir, filename)
+
+        # Save the image
+        generated_image.image.save(filepath)
+
+        return f"Successfully generated the image and saved it to: {filepath}"
+
+    except Exception as e:
+        return f"An error occurred while generating the image: {e}"
 
 
 root_agent = Agent(
     name="root_agent",
     model="gemini-2.5-flash",
     instruction="You are a helpful AI assistant designed to provide accurate and useful information.",
-    tools=[get_weather, get_current_time],
+    tools=[generate_image],
 )
