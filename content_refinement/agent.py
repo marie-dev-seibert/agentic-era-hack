@@ -35,7 +35,7 @@ def before_model_callback(callback_context: CallbackContext, llm_request: LlmReq
     print("llm_request", llm_request)
     if callback_context.state.get("podcast"):
         llm_request.config.system_instruction = improvement_prompt.format(
-            podcast=callback_context.state.get("podcast"), # TODO: get podcast from database
+            podcast=callback_context.state.get("podcast")
         )
     
 
