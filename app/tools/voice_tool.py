@@ -26,7 +26,7 @@ def generate_voice(query: str, lang_code: str, voice_name: str) -> Dict[str, Any
     try:
         client = texttospeech.TextToSpeechClient()
 
-        synthesis_input = texttospeech.SynthesisInput(text=query)
+        synthesis_input = texttospeech.SynthesisInput(ssml=input)
 
         voice = texttospeech.VoiceSelectionParams(
             language_code="de-DE",  name="de-DE-Chirp3-HD-Charon",
@@ -36,7 +36,7 @@ def generate_voice(query: str, lang_code: str, voice_name: str) -> Dict[str, Any
         )
 
         response = client.synthesize_speech(
-            input=synthesis_input, voice=voice, audio_config=audio_config, 
+            input=synthesis_input, voice=voice, audio_config=audio_config,
         )
 
         audio_url = upload_audio_to_gcs(response.audio_content)
