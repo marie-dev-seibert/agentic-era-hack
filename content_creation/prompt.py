@@ -1,22 +1,12 @@
-language = "German"
-type = "podcast"
-topic = "To educate the audience about the topics and keywords"
-keywords = ["AI", "Technology", "Science", "Culture", "Society", "Future", "Innovation"]
-core_objective = "To educate the audience about the topics and keywords"
-format = "episodic"
-target_audience = "kids"
-target_age = "5-10"
-# length = "1 hour"
-# narrator = "John Doe"
-# narrator_gender = "male"
-# narrator_age = "30"
-
-prompt = """
-Write a complete {type} script that strictly follows these inputs and constraints.
+initial_prompt = """
+Write a complete {type} audio script that strictly follows the user's inputs and constraints.
 
 Constraints:
+- Chapter length: {chapter_length}.
 - Language: write everything in {language}.
+- Length: {length}.
 - Format: {format}. Structure the episode with a clear beginning, multiple chapters, and an outro.
+- Speakers: {speakers}.
 - Audience: {target_audience}, ages {target_age}. Use a friendly, engaging, age-appropriate tone.
 - Core objective: {core_objective}.
 - Topics to cover: {topics}.
@@ -55,15 +45,15 @@ Sources:
 Return only the script content described above, with the headers indicated, and no extra commentary.
 """
 
-rendered_prompt = prompt.format(
-    language=language,
-    format=format,
-    target_audience=target_audience,
-    target_age=target_age,
-    core_objective=core_objective,
-    topics=topic,
-    keywords=", ".join(keywords),
-    type=type,
-)
+# rendered_prompt = prompt.format(
+#     language=language,
+#     format=format,
+#     target_audience=target_audience,
+#     target_age=target_age,
+#     core_objective=core_objective,
+#     topics=topic,
+#     keywords=", ".join(keywords),
+#     type=type,
+# )
 
-print(rendered_prompt)
+# print(rendered_prompt)
