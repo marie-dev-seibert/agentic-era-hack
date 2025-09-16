@@ -92,11 +92,15 @@ def deploy_agent_engine_app(
 
     staging_bucket_uri = f"gs://{project}-agent-engine"
     artifacts_bucket_name = f"{project}-aiqueens-podcasts-logs-data"
+    image_bucket_name = f"{project}-aiqueens-image-data"
     create_bucket_if_not_exists(
         bucket_name=artifacts_bucket_name, project=project, location=location
     )
     create_bucket_if_not_exists(
         bucket_name=staging_bucket_uri, project=project, location=location
+    )
+    create_bucket_if_not_exists(
+        bucket_name=image_bucket_name, project=project, location=location
     )
 
     vertexai.init(project=project, location=location, staging_bucket=staging_bucket_uri)
@@ -114,6 +118,9 @@ def deploy_agent_engine_app(
 
     # Set worker parallelism to 1
     env_vars["NUM_WORKERS"] = "1"
+
+    # Pass the artifacts bucket name to the agent's environment
+    env_vars["IMAGE_BUCKET"] = image_bucket_name
 
     # Common configuration for both create and update operations
     agent_config = {

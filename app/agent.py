@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from io import BytesIO
 import os
 import time
 from google import genai
@@ -19,6 +20,7 @@ from google.genai import types
 
 import google.auth
 from google.adk.agents import Agent
+from google.cloud import storage
 
 _, project_id = google.auth.default()
 os.environ.setdefault("GOOGLE_CLOUD_PROJECT", project_id)
@@ -26,7 +28,7 @@ os.environ.setdefault("GOOGLE_CLOUD_LOCATION", "global")
 os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "True")
 
 genai_client = genai.Client()
-
+storage_client = storage.Client()
 
 def generate_image(prompt: str) -> str:
     """Generates images using the Imagen model based on a descriptive prompt.
@@ -40,9 +42,7 @@ def generate_image(prompt: str) -> str:
     """
     print(f"Tool 'generate_image' called with prompt: '{prompt}'")
     try:
-        # Create a directory to save images if it doesn't exist
-        output_dir = "generated_images"
-        os.makedirs(output_dir, exist_ok=True)
+        image_bucket_name = os.environ.get("IMAGE_BUCKET")
 
         response = genai_client.models.generate_images(
             model='imagen-4.0-generate-001', 
@@ -50,19 +50,26 @@ def generate_image(prompt: str) -> str:
             config=types.GenerateImagesConfig()
         )
 
-        generated_image = response.generated_images[0]
+        image_bytes = response.generated_images[0].image.image_bytes
 
-        # Create a unique filename
-        timestamp = int(time.time())
-        filename = f"{prompt.replace(' ', '_')[:30]}_{timestamp}.png"
-        filepath = os.path.join(output_dir, filename)
+        image_buffer = BytesIO(image_bytes)
 
-        # Save the image
-        generated_image.image.save(filepath)
+        blob_name = f"generated-images/{int(time.time())}.png"
+        bucket = storage_client.bucket(image_bucket_name)
+        blob = bucket.blob(blob_name)
 
-        return f"Successfully generated the image and saved it to: {filepath}"
+        blob.upload_from_file(
+            image_buffer,
+            content_type='image/png'
+        )
+
+        public_url = f"https://storage.googleapis.com/{image_bucket_name}/{blob_name}"
+
+        print(f"Success! Image URL: {public_url}")
+        return f"Image generated! View it here: {public_url}"
 
     except Exception as e:
+        print(f"An error occurred in generate_image: {e}")
         return f"An error occurred while generating the image: {e}"
 
 
