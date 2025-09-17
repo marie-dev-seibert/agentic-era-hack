@@ -196,4 +196,5 @@ my_env.tfvars
 .env
 .requirements.txt
 
-/generated_images
+/out
+WARP.md
