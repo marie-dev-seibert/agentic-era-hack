@@ -33,25 +33,28 @@ class Chapter(BaseModel):
 class Podcast(BaseModel):
     audio_script: list[Chapter]
     title: str = Field(description="The title of the podcast")
+    speaker_names: list[str] = Field(description="The names of the speakers")
 
 def formatted_output(tool_context: ToolContext, podcast: Podcast):
     """
     Returns the audio script of the correctly formatted podcast.
 
     Args:
-        audio_script: {audio_script: [{"chapter_title": "Chapter 1", "chapter_content": "Chapter 1 content"}, {"chapter_title": "Chapter 2", "chapter_content": "Chapter 2 content"}], "title": "Podcast Title"} - The audio script of the podcast
+        audio_script: Podcast
     
     Returns:
         Podcast - The formatted output of the podcast. For example:
         {audio_script: [{"chapter_title": "Chapter 1", "chapter_content": "Chapter 1 content"}, {"chapter_title": "Chapter 2", "chapter_content": "Chapter 2 content"}], "title": "Podcast Title"}
     """
-    tool_context.state["podcast"] = podcast
+    tool_context.state["temp:podcast"] = podcast
+    tool_context._invocation_context.session.state["podcast"] = podcast
     return podcast
 
 def before_model_callback(callback_context: CallbackContext, llm_request: LlmRequest):
     llm_request.config.system_instruction = initial_prompt
 
 initial_prompt = """
+You are an agent specialized in creating audio content scripts. After audio script creation ask the user if he wants to continue by exiting to your parent agent.
 You are an AIs Agent that generates content for a {type} audio script and iterate with the user until the user is satisfied.
 Strictly follow the user's inputs and constraints.
 The formatting of the audio script should have the host's name with an optional emotion in which the text should be delivered.
@@ -91,15 +94,26 @@ Writing guidelines:
 - Be inclusive and positive; avoid sensitive or unsafe content.
 - If any input is missing, make reasonable, child-safe assumptions consistent with the objective.
 
-Always return the whole script content described above (also on refinement steps) and ask the user if they are satisfied with the script. If they are not satisfied, iterate with the user until the user is satisfied.
+Always return the whole script content described above (also on refinement steps) and ask the user if they are satisfied with the script.
+If user is not satisfied, iterate with the user until the user is satisfied.
+If user is satisfied, this is your final response and your turn is completed.
 """
 
 content_agent = Agent(
     input_schema=PodcastInput,
     name="content_creation_agent",
-    description="I am an agent specialized in creating audio content scripts.",
+    description="I am an agent specialized in creating audio content scripts. After audio script creation ask the user if he wants to continue by exiting to your parent agent.",
     model="gemini-2.5-flash",
     instruction="Create a podcast based on user's inputs",
     tools=[formatted_output],
     before_model_callback=before_model_callback,
 )
+
+# educational
+# 3 speakers, 1 host and 2 guests
+# Target Audience: kids
+# Target Age: 5-10
+# Core Objective: educate about science and entertain with stories
+# Topics to cover: science and stories
+# speaker names: Alex, Zara and Mia
+# science and stories
