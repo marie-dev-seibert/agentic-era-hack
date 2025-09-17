@@ -41,34 +41,45 @@ async def generate_image(prompt: str, tool_context: ToolContext) :
 
         image_bytes = response.generated_images[0].image.image_bytes
 
-        image_buffer = BytesIO(image_bytes)
+        artifact_name = f"generated-image_{int(time.time())}.png"
 
-        blob_name = f"generated-image_{int(time.time())}.png"
-        bucket = storage_client.bucket(image_bucket_name)
-        blob = bucket.blob(blob_name)
-
-        blob.upload_from_file(
-            image_buffer,
-            content_type='image/png'
-        )
-
-        public_url = f"https://storage.googleapis.com/{image_bucket_name}/{blob_name}"
+        save_image_in_bucket(tool_context, image_bytes, artifact_name)
 
         report_artifact = types.Part.from_bytes(
             data=image_bytes, mime_type="image/png"
         )
 
-        await tool_context.save_artifact(blob_name, report_artifact)
-        print(f"Image also saved as ADK artifact: {blob_name}")
+        await tool_context.save_artifact(artifact_name, report_artifact)
 
-
-        print(f"Success! Image URL: {public_url}")
         return {
             "status": "success",
-            "message": f"Image generated .  ADK artifact: {blob_name}.",
-            "artifact_name": blob_name,
+            "message": f"Image generated .  ADK artifact: {artifact_name}.",
+            "artifact_name": artifact_name,
         }
 
     except Exception as e:
         print(f"An error occurred in generate_image: {e}")
         return f"An error occurred while generating the image: {e}"
+
+def save_image_in_bucket(tool_context: ToolContext, image_bytes, filename: str):
+    storage_client = storage.Client()
+    image_bucket_name = os.environ.get("IMAGE_BUCKET")
+
+    bucket = storage_client.bucket(image_bucket_name)
+    blob = bucket.blob(filename)
+
+    try:
+        blob.upload_from_file(
+            image_bytes,
+            content_type='image/png'
+        )
+
+        gcs_uri = f"gs://{image_bucket_name}/{filename}"
+        tool_context.state["generated_image_gcs_uri_" + filename] = gcs_uri
+
+    except Exception as e_gcs:
+
+        return {
+            "status": "error",
+            "message": f"Image generated but failed to upload to GCS: {e_gcs}",
+        }
