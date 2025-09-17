@@ -28,8 +28,6 @@ async def generate_image(prompt: str, tool_context: ToolContext) :
     """
     print(f"Tool 'generate_image' called with prompt: '{prompt}'")
     try:
-        image_bucket_name = os.environ.get("IMAGE_BUCKET")
-
         response = genai_client.models.generate_images(
             model='imagen-4.0-generate-001', 
             prompt=prompt,

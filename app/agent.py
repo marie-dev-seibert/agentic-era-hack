@@ -19,6 +19,8 @@ from zoneinfo import ZoneInfo
 import google.auth
 from google.adk.agents import Agent
 
+from app.agents.image_agent import image_agent
+
 _, project_id = google.auth.default()
 os.environ.setdefault("GOOGLE_CLOUD_PROJECT", project_id)
 os.environ.setdefault("GOOGLE_CLOUD_LOCATION", "global")
@@ -63,4 +65,5 @@ root_agent = Agent(
     model="gemini-2.5-flash",
     instruction="You are a helpful AI assistant designed to provide accurate and useful information.",
     tools=[get_weather, get_current_time],
+    sub_agents=[image_agent],
 )
