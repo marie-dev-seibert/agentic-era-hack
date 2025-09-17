@@ -1,19 +1,21 @@
 from datetime import time
 import wave
+from google import genai
 from google.adk.tools import ToolContext
 from google.cloud import storage
 from google.cloud.storage.blob import BytesIO
 from google.genai import types
 from pydantic import BaseModel
 import random
+from pydantic import BaseModel, Field
 class Chapter(BaseModel):
-    chapter_title: str
-    chapter_content: str
+    chapter_title: str = Field(description="The title of the chapter")
+    chapter_content: str = Field(description="The content of the chapter")
 
 class Podcast(BaseModel):
-    title: str
-    chapters: list[Chapter]
-    speaker_names: list[str]
+    audio_script: list[Chapter]
+    title: str = Field(description="The title of the podcast")
+    speaker_names: list[str] = Field(description="The names of the speakers")
 
 VOICE_NAMES = {
     "Zephyr": "Bright",
@@ -48,7 +50,7 @@ VOICE_NAMES = {
     "Sulafat": "Warm"
 }
 
-def create_speaker(speaker_name: str, voice_name: str) -> types.SpeakerVoiceConfig:
+def create_speaker(speaker_name: str) -> types.SpeakerVoiceConfig:
     """
     Create a SpeakerVoiceConfig for the given speaker and voice_name.
 
@@ -62,9 +64,8 @@ def create_speaker(speaker_name: str, voice_name: str) -> types.SpeakerVoiceConf
     Raises:
         ValueError: If the voice_name is not a valid key in VOICE_NAMES.
     """
-    if voice_name not in VOICE_NAMES:
-        # Pick a random voice from the VOICE_NAMES keys if the provided voice_name is not valid
-        voice_name = random.choice(list(VOICE_NAMES.keys()))
+    # Pick a random voice from the VOICE_NAMES keys if the provided voice_name is not valid
+    voice_name = random.choice(list(VOICE_NAMES.keys()))
 
     return types.SpeakerVoiceConfig(
         speaker=speaker_name,
@@ -76,40 +77,37 @@ def create_speaker(speaker_name: str, voice_name: str) -> types.SpeakerVoiceConf
     )
 
 
-def tts_tool(chapters: list[str], speaker_voice_mapping: dict[str, str], tool_context: ToolContext) -> dict[str, str]:
+def tts_tool(tool_context: ToolContext) -> dict[str, str]:
     """Generates text to speech for a podcast."""
 
-    # client = genai.Client()
+    speaker_names = tool_context.state["podcast"]["speaker_names"]
+    chapter_texts = [chapter["chapter_content"] for chapter in tool_context.state["podcast"]["audio_script"]]
+    text = "\n".join(chapter_texts)
 
-    prompt = chapters[1]
-    speaker_voice_configs = [create_speaker(speaker_name, voice_name) for speaker_name, voice_name in speaker_voice_mapping.items()]
+    speaker_voice_configs = [create_speaker(speaker_name) for speaker_name in speaker_names]
 
-    # response = client.models.generate_content(
-    #     model="gemini-2.5-flash-preview-tts",
-    #     contents=prompt,
-    #     config=types.GenerateContentConfig(
-    #         response_modalities=["AUDIO"],
-    #         speech_config=types.SpeechConfig(
-    #             multi_speaker_voice_config=types.MultiSpeakerVoiceConfig(
-    #                 speaker_voice_configs=speaker_voice_configs,
-    #             )
-    #         ),
-    #     ),
-    # )
+    client = genai.Client()
 
-    # data = response.candidates[0].content.parts[0].inline_data.data
-    # create_wav_file("out/output.wav", data)  # Saves the file to current directory
-    # audio_url = upload_audio_to_gcs(data)
+    response = client.models.generate_content(
+        model="gemini-2.5-flash-preview-tts",
+        contents=text,
+        config=types.GenerateContentConfig(
+            response_modalities=["AUDIO"],
+            speech_config=types.SpeechConfig(
+                multi_speaker_voice_config=types.MultiSpeakerVoiceConfig(
+                    speaker_voice_configs=speaker_voice_configs,
+                )
+            ),
+        ),
+    )
 
-    # return {
-    #     "status": "success",
-    #     "audio_url": audio_url,
-    #     "message": "Successfully synthesized speech."
-    # }
+    data = response.candidates[0].content.parts[0].inline_data.data
+    create_wav_file("out/output.wav", data)  # Saves the file to current directory
+    audio_url = upload_audio_to_gcs(data)
 
     return {
         "status": "success",
-        "audio_url": "gs://qwiklabs-gcp-03-d90b22626152-aiqueens-audio-data/1758030805.346349/output_0.wav", 
+        "audio_url": audio_url,
         "message": "Successfully synthesized speech."
     }
 

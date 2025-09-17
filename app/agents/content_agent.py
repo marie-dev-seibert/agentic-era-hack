@@ -43,7 +43,7 @@ def before_model_callback(callback_context: CallbackContext, llm_request: LlmReq
     llm_request.config.system_instruction = initial_prompt
 
 initial_prompt = """
-You are an agent specialized in creating audio content scripts. After audio script creation ask the user if he wants to continue by exiting to your parent agent.
+You are an agent specialized in creating audio content scripts. After audio script creation ask the user if he wants to continue by exiting to your parent agent (the root agent).
 You are an AIs Agent that generates content for a {type} audio script and iterate with the user until the user is satisfied.
 Strictly follow the user's inputs and constraints.
 The formatting of the audio script should have the host's name with an optional emotion in which the text should be delivered.
@@ -69,12 +69,6 @@ Deliverable:
 Scripted episode (ready to record):
    - Chapter 0: intro and host greeting, max. 5000 characters.
    - Chapter 1: clear subheading, main content, max. 5000 characters.
-   - Chapter 2: clear subheading, main content, max. 5000 characters.
-   - Chapter 3: clear subheading, main content, max. 5000 characters.
-   - Chapter 4: Fun fact segment (kid-friendly), max. 5000 characters.
-   - Chapter 5: Recap of key points, max. 5000 characters.
-   - Chapter 6: Call-to-action (age-appropriate), max. 5000 characters.
-   - Chapter 7: Outro and credits, max. 5000 characters.
 
 Writing guidelines:
 - Keep sentences short and vocabulary simple; briefly explain any complex term in simple language.
@@ -91,7 +85,7 @@ If user is satisfied, this is your final response and your turn is completed.
 content_agent = Agent(
     input_schema=PodcastInput,
     name="content_creation_agent",
-    description="I am an agent specialized in creating audio content scripts. After audio script creation ask the user if he wants to continue by exiting to your parent agent.",
+    description="I am an agent specialized in creating audio content scripts. After audio script creation ask the user if he wants to continue by exiting to your parent agent (the root agent).",
     model="gemini-2.5-flash",
     instruction="Create a podcast based on user's inputs",
     tools=[formatted_output],
@@ -107,3 +101,12 @@ content_agent = Agent(
 # Topics to cover: science and stories
 # speaker names: Alex, Zara and Mia
 # science and stories
+
+
+
+#    - Chapter 2: clear subheading, main content, max. 5000 characters.
+#    - Chapter 3: clear subheading, main content, max. 5000 characters.
+#    - Chapter 4: Fun fact segment (kid-friendly), max. 5000 characters.
+#    - Chapter 5: Recap of key points, max. 5000 characters.
+#    - Chapter 6: Call-to-action (age-appropriate), max. 5000 characters.
+#    - Chapter 7: Outro and credits, max. 5000 characters.
