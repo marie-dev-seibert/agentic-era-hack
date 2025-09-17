@@ -1,15 +1,22 @@
 import os
 import time
 from google import genai
+from google.adk.tools import ToolContext
 from google.genai import types
 from io import BytesIO
 from google.cloud import storage
+import google.auth
+
+_, project_id = google.auth.default()
+os.environ.setdefault("GOOGLE_CLOUD_PROJECT", project_id)
+os.environ.setdefault("GOOGLE_CLOUD_LOCATION", "global")
+os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "True")
 
 
 genai_client = genai.Client()
 storage_client = storage.Client()
 
-def generate_image(prompt: str) -> str:
+async def generate_image(prompt: str, tool_context: ToolContext) :
     """Generates images using the Imagen model based on a descriptive prompt.
 
     Args:
@@ -36,7 +43,7 @@ def generate_image(prompt: str) -> str:
 
         image_buffer = BytesIO(image_bytes)
 
-        blob_name = f"generated-images/{int(time.time())}.png"
+        blob_name = f"generated-image_{int(time.time())}.png"
         bucket = storage_client.bucket(image_bucket_name)
         blob = bucket.blob(blob_name)
 
@@ -47,8 +54,20 @@ def generate_image(prompt: str) -> str:
 
         public_url = f"https://storage.googleapis.com/{image_bucket_name}/{blob_name}"
 
+        report_artifact = types.Part.from_bytes(
+            data=image_bytes, mime_type="image/png"
+        )
+
+        await tool_context.save_artifact(blob_name, report_artifact)
+        print(f"Image also saved as ADK artifact: {blob_name}")
+
+
         print(f"Success! Image URL: {public_url}")
-        return f"Image generated! View it here: {public_url}"
+        return {
+            "status": "success",
+            "message": f"Image generated .  ADK artifact: {blob_name}.",
+            "artifact_name": blob_name,
+        }
 
     except Exception as e:
         print(f"An error occurred in generate_image: {e}")

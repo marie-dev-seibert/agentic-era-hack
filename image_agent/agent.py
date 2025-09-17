@@ -1,15 +1,14 @@
 import os
-import time
 import google.auth
 from google.adk.agents import Agent
 from google import genai
 from google.cloud import storage
 from google.genai import types
 from io import BytesIO
-from google.adk.tools import load_artifacts
+import time
 
-from image_agent.prompts import inital_prompt
 from image_agent.tools import generate_image
+from image_agent.prompts import inital_prompt
 
 
 _, project_id = google.auth.default()
@@ -22,5 +21,6 @@ root_agent = Agent(
     name="thumbnail_agent",
     model="gemini-2.5-flash",
     instruction=inital_prompt,
-    tools=[generate_image, load_artifacts],
+    tools=[generate_image],
+    output_key="output_image",
 )
