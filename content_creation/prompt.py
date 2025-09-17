@@ -12,9 +12,7 @@ Alex: I'm doing nothing.
 Zara serious: Be honest, what are you doing?
 
 Constraints:
-- Chapter length: {max_chapter_length}.
-- Language: write everything in {language}.
-- Length: {length}.
+- Language: write everything in English.
 - Format: {format}. Structure the episode with a clear beginning, multiple chapters, and an outro.
 - Speakers: {speakers}.
 - Audience: {target_audience}, ages {target_age}. Use a friendly, engaging, age-appropriate tone.
@@ -24,14 +22,14 @@ Constraints:
 
 Deliverable:
 Scripted episode (ready to record):
-   - Chapter 0: intro and host greeting
-   - Chapter 1: clear subheading, learning goal, main content, 1 interactive question/activity
-   - Chapter 2: clear subheading, learning goal, main content, 1 interactive question/activity
-   - Chapter 3: clear subheading, learning goal, main content, 1 interactive question/activity
-   - Chapter 4: Fun fact segment (kid-friendly)
-   - Chapter 5: Recap of key points
-   - Chapter 6: Call-to-action (age-appropriate)
-   - Chapter 7: Outro and credits
+   - Chapter 0: intro and host greeting, max. 5000 characters.
+   - Chapter 1: clear subheading, main content, max. 5000 characters.
+   - Chapter 2: clear subheading, main content, max. 5000 characters.
+   - Chapter 3: clear subheading, main content, max. 5000 characters.
+   - Chapter 4: Fun fact segment (kid-friendly), max. 5000 characters.
+   - Chapter 5: Recap of key points, max. 5000 characters.
+   - Chapter 6: Call-to-action (age-appropriate), max. 5000 characters.
+   - Chapter 7: Outro and credits, max. 5000 characters.
 
 Writing guidelines:
 - Keep sentences short and vocabulary simple; briefly explain any complex term in simple language.
