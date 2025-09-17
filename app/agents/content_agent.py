@@ -1,20 +1,10 @@
 from google.adk.agents import Agent
-
-import os
-
-from google.adk.models import LlmResponse, LlmRequest
+from google.adk.models import LlmRequest
 from google.adk.agents.callback_context import CallbackContext
-import google.auth
 from google.adk.agents import Agent
-from google.adk.tools import google_search, ToolContext
-from google.adk.sessions.in_memory_session_service import InMemorySessionService
+from google.adk.tools import ToolContext
 
 from pydantic import BaseModel, Field
-
-_, project_id = google.auth.default()
-os.environ.setdefault("GOOGLE_CLOUD_PROJECT", project_id)
-os.environ.setdefault("GOOGLE_CLOUD_LOCATION", "global")
-os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "True")
 
 class PodcastInput(BaseModel):
     core_objective: str = Field(description="The core objective of the podcast")
@@ -46,8 +36,7 @@ def formatted_output(tool_context: ToolContext, podcast: Podcast):
         Podcast - The formatted output of the podcast. For example:
         {audio_script: [{"chapter_title": "Chapter 1", "chapter_content": "Chapter 1 content"}, {"chapter_title": "Chapter 2", "chapter_content": "Chapter 2 content"}], "title": "Podcast Title"}
     """
-    tool_context.state["temp:podcast"] = podcast
-    tool_context._invocation_context.session.state["podcast"] = podcast
+    tool_context.state["podcast"] = podcast
     return podcast
 
 def before_model_callback(callback_context: CallbackContext, llm_request: LlmRequest):
@@ -107,6 +96,7 @@ content_agent = Agent(
     instruction="Create a podcast based on user's inputs",
     tools=[formatted_output],
     before_model_callback=before_model_callback,
+    # output_key="podcast",
 )
 
 # educational
