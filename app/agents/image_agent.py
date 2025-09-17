@@ -1,8 +1,12 @@
 from google.adk.agents import Agent
+from app.prompts.inital_image_prompt import inital_image_prompt
+from app.tools.generate_image_tool import generate_image
+
 
 image_agent = Agent(
-    name="image_agent",
+    name="thumbnail_agent",
     model="gemini-2.5-flash",
-    description="Generates images for a podcast.",
-    instruction="You are an AI Agent that generates the promt for an image for a podcast and iterate with the user until the user is satisfied.",
+    instruction=inital_image_prompt,
+    tools=[generate_image],
+    output_key="output_image",
 )
