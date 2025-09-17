@@ -9,7 +9,6 @@ from google.adk.agents import Agent
 from google.adk.tools import google_search, ToolContext
 from google.adk.sessions.in_memory_session_service import InMemorySessionService
 
-from content_creation.prompt import initial_prompt
 from pydantic import BaseModel, Field
 
 _, project_id = google.auth.default()
