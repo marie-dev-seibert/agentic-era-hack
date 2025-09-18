@@ -45,7 +45,7 @@ def before_model_callback(callback_context: CallbackContext, llm_request: LlmReq
     llm_request.config.system_instruction = formatted_prompt
 
 initial_prompt = """
-You are an agent specialized in creating audio content scripts. After audio script creation ask the user if he wants to continue by exiting to your parent agent.
+You are an agent specialized in creating audio content scripts. After audio script creation ask the user if he wants to continue by exiting to your parent agent (the root agent).
 You are an AIs Agent that generates content for a {type} audio script and iterate with the user until the user is satisfied.
 Strictly follow the user's inputs and constraints.
 The formatting of the audio script should have the speakers' names with an optional emotion in which the text should be delivered.
@@ -77,7 +77,7 @@ Scripted episode (ready to record):
    - Chapter 4: Fun fact segment (kid-friendly), max. 5000 characters.
    - Chapter 5: Recap of key points, max. 5000 characters.
    - Chapter 6: Call-to-action (age-appropriate), max. 5000 characters.
-   - Chapter 7: Outro and credits, max. 5000 characters.
+   - Chapter 7: Outro, max. 2000 characters.
 
 Writing guidelines:
 - Keep sentences short and vocabulary simple; briefly explain any complex term in simple language.
@@ -94,7 +94,7 @@ If user is satisfied, this is your final response and your turn is completed.
 content_agent = Agent(
     input_schema=PodcastInput,
     name="content_creation_agent",
-    description="I am an agent specialized in creating audio content scripts. After audio script creation ask the user if he wants to continue by exiting to your parent agent.",
+    description="I am an agent specialized in creating audio content scripts. After audio script creation ask the user if he wants to continue by exiting to the root agent.",
     model="gemini-2.5-flash",
     instruction="Create a podcast based on user's inputs",
     tools=[formatted_output],
@@ -109,3 +109,6 @@ content_agent = Agent(
 # Core Objective: educate about science and entertain with stories
 # Topics to cover: science and stories
 # science and stories
+
+
+
