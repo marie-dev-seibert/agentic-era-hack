@@ -67,6 +67,7 @@ variable "app_sa_roles" {
   type        = list(string)
   default = [
     "roles/aiplatform.user",
+    "roles/aiplatform.endpoints.predict",
     "roles/discoveryengine.editor",
     "roles/logging.logWriter",
     "roles/cloudtrace.agent",
@@ -81,6 +82,7 @@ variable "cicd_roles" {
   default = [
     "roles/storage.admin",
     "roles/aiplatform.user",
+    "roles/aiplatform.endpoints.predict",
     "roles/discoveryengine.editor",
     "roles/logging.logWriter",
     "roles/cloudtrace.agent",
@@ -95,6 +97,7 @@ variable "cicd_sa_deployment_required_roles" {
   default = [    
     "roles/iam.serviceAccountUser",
     "roles/aiplatform.user",
+    "roles/aiplatform.endpoints.predict",
     "roles/storage.admin"
   ]
 }
