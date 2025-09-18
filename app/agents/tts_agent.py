@@ -1,6 +1,5 @@
 from google.adk.agents import Agent
 from app.tools.tts_tool import tts_tool
-from pydantic import BaseModel, Field
 
 tts_agent = Agent(
     name="tts_agent",

@@ -1,9 +1,18 @@
+import os
 from google import genai
 from google.genai import types
 import wave
+import google.auth
+
+_, project_id = google.auth.default()
+os.environ.setdefault("GOOGLE_CLOUD_PROJECT", project_id)
+os.environ.setdefault("GOOGLE_CLOUD_LOCATION", "global")
+os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "True")
+
+
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"), vertexai=False)
 
 def voice_gemini(prompt: str, filename: str):
-    client = genai.Client()
 
     response = client.models.generate_content(
         model="gemini-2.5-flash-preview-tts",

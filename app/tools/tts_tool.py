@@ -8,6 +8,18 @@ from google.genai import types
 from pydantic import BaseModel
 import random
 from pydantic import BaseModel, Field
+import google.auth
+import os
+
+
+_, project_id = google.auth.default()
+os.environ.setdefault("GOOGLE_CLOUD_PROJECT", project_id)
+os.environ.setdefault("GOOGLE_CLOUD_LOCATION", "global")
+os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "True")
+
+
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"), vertexai=False)
+
 class Chapter(BaseModel):
     chapter_title: str = Field(description="The title of the chapter")
     chapter_content: str = Field(description="The content of the chapter")
@@ -79,15 +91,15 @@ def create_speaker(speaker_name: str) -> types.SpeakerVoiceConfig:
 
 def tts_tool(tool_context: ToolContext) -> dict[str, str]:
     """Generates text to speech for a podcast."""
-
+    print("Using TTS Tool")
     speaker_names = tool_context.state["podcast"]["speaker_names"]
     chapter_texts = [chapter["chapter_content"] for chapter in tool_context.state["podcast"]["audio_script"]]
     text = "\n".join(chapter_texts)
 
     speaker_voice_configs = [create_speaker(speaker_name) for speaker_name in speaker_names]
-
-    client = genai.Client()
-
+    print("created speaker voice configs", speaker_voice_configs)
+    
+    print("Now creating response")
     response = client.models.generate_content(
         model="gemini-2.5-flash-preview-tts",
         contents=text,
@@ -100,7 +112,7 @@ def tts_tool(tool_context: ToolContext) -> dict[str, str]:
             ),
         ),
     )
-
+    print("Response created")
     data = response.candidates[0].content.parts[0].inline_data.data
     create_wav_file("out/output.wav", data)  # Saves the file to current directory
     audio_url = upload_audio_to_gcs(data)
@@ -113,6 +125,8 @@ def tts_tool(tool_context: ToolContext) -> dict[str, str]:
 
 
 def create_wav_file(filename, pcm, channels=1, rate=24000, sample_width=2):
+    print("Creating wav file")
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with wave.open(filename, "wb") as wf:
         wf.setnchannels(channels)
         wf.setsampwidth(sample_width)
@@ -120,6 +134,7 @@ def create_wav_file(filename, pcm, channels=1, rate=24000, sample_width=2):
         wf.writeframes(pcm)
 
 def upload_audio_to_gcs(audio_content: bytes) -> str:
+    print("Uploading audio to GCS")
     bucket_name = "qwiklabs-gcp-03-d90b22626152-aiqueens-audio-data"
     destination_blob_name = f"{time()}/output.wav"
 
