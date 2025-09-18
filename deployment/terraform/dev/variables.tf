@@ -46,6 +46,7 @@ variable "app_sa_roles" {
   type        = list(string)
   default = [
     "roles/aiplatform.user",
+    "roles/aiplatform.endpoints.predict",
     "roles/discoveryengine.editor",
     "roles/logging.logWriter",
     "roles/cloudtrace.agent",
