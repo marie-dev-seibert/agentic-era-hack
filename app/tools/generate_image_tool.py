@@ -61,18 +61,19 @@ async def generate_image(prompt: str, tool_context: ToolContext) :
 def save_image_in_bucket(tool_context: ToolContext, image_bytes, filename: str):
     storage_client = storage.Client()
     image_bucket_name = os.environ.get("IMAGE_BUCKET")
+    gcs_blob_name = f"generated_images/{filename}"
 
     bucket = storage_client.bucket(image_bucket_name)
-    blob = bucket.blob(filename)
+    blob = bucket.blob(gcs_blob_name)
 
     try:
-        blob.upload_from_file(
+        blob.upload_from_string(
             image_bytes,
             content_type='image/png'
         )
 
-        gcs_uri = f"gs://{image_bucket_name}/{filename}"
-        tool_context.state["generated_image_gcs_uri_" + filename] = gcs_uri
+        gcs_uri = f"gs://{image_bucket_name}/{gcs_blob_name}"
+        tool_context.state["generated_image_gcs_uri_" + str(int(time.time()))] = gcs_uri
 
     except Exception as e_gcs:
 
