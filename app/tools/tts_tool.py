@@ -1,15 +1,15 @@
-from datetime import time
+from io import BytesIO
 import wave
 from google import genai
 from google.adk.tools import ToolContext
 from google.cloud import storage
-from google.cloud.storage.blob import BytesIO
 from google.genai import types
 from pydantic import BaseModel
 import random
 from pydantic import BaseModel, Field
 import google.auth
 import os
+import time
 
 
 _, project_id = google.auth.default()
@@ -89,7 +89,7 @@ def create_speaker(speaker_name: str) -> types.SpeakerVoiceConfig:
     )
 
 
-def tts_tool(tool_context: ToolContext) -> dict[str, str]:
+async def tts_tool(tool_context: ToolContext) -> dict[str, str]:
     """Generates text to speech for a podcast."""
     print("Using TTS Tool")
     speaker_names = tool_context.state["podcast"]["speaker_names"]
@@ -114,40 +114,63 @@ def tts_tool(tool_context: ToolContext) -> dict[str, str]:
     )
     print("Response created")
     data = response.candidates[0].content.parts[0].inline_data.data
-    create_wav_file("out/output.wav", data)  # Saves the file to current directory
-    audio_url = upload_audio_to_gcs(data)
+    if data is None:
+        raise ValueError("No audio data received from Gemini TTS")
+    
+    artifact_name = f"out/generated-audio_{int(time.time())}.wav"
+    create_wav_file(artifact_name, data)  # Saves the file to current directory
+    wav_data = upload_audio_to_gcs(tool_context, data)
+    
+    report_artifact = types.Part.from_bytes(
+            data=wav_data, mime_type="audio/wav"
+        )
+
+    await tool_context.save_artifact(artifact_name, report_artifact)
 
     return {
         "status": "success",
-        "audio_url": audio_url,
+        # "audio_url": audio_url,
+        "artifact_name": artifact_name,
         "message": "Successfully synthesized speech."
     }
 
 
-def create_wav_file(filename, pcm, channels=1, rate=24000, sample_width=2):
+def create_wav_file(filename: str, pcm: bytes, channels: int = 1, rate: int = 24000, sample_width: int = 2):
     print("Creating wav file")
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    dirname = os.path.dirname("/out")
+    if dirname: 
+        os.makedirs(dirname, exist_ok=True)
     with wave.open(filename, "wb") as wf:
         wf.setnchannels(channels)
         wf.setsampwidth(sample_width)
         wf.setframerate(rate)
         wf.writeframes(pcm)
 
-def upload_audio_to_gcs(audio_content: bytes) -> str:
+def upload_audio_to_gcs(tool_context: ToolContext, audio_content: bytes):
     print("Uploading audio to GCS")
     bucket_name = "qwiklabs-gcp-03-d90b22626152-aiqueens-audio-data"
-    destination_blob_name = f"{time()}/output.wav"
+    destination_blob_name = f"{time.time()}/output.wav"
 
+    wav_buffer = BytesIO()
+    with wave.open(wav_buffer, "wb") as wf:
+        wf.setnchannels(1) 
+        wf.setsampwidth(2) 
+        wf.setframerate(24000)
+        wf.writeframes(audio_content)
+    
+    wav_data = wav_buffer.getvalue()
+    
     storage_client = storage.Client()
 
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(destination_blob_name)
 
-    # Upload binary audio data with correct content type
-    audio_file = BytesIO(audio_content)
-    blob.upload_from_file(audio_file, content_type="audio/wav")
+    blob.upload_from_string(wav_data, content_type="audio/wav")
 
-    return f"gs://{bucket_name}/{destination_blob_name}"
+    gcs_uri = f"gs://{bucket_name}/{destination_blob_name}"
+    tool_context.state["generated_audio_gcs_uri_" + str(int(time.time()))] = gcs_uri
+
+    return wav_data
 
 
 
