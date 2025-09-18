@@ -38,22 +38,18 @@ def create_speaker(speaker_name: str) -> types.SpeakerVoiceConfig:
 
     Args:
         speaker_name (str): The name/label for the speaker (e.g., "Speaker01").
-        voice_name (str): The name of the voice to use. Must be one of the keys in VOICE_NAMES.
 
     Returns:
         types.SpeakerVoiceConfig: The speaker voice config for Gemini TTS.
-
-    Raises:
-        ValueError: If the voice_name is not a valid key in VOICE_NAMES.
     """
-    # Pick a random voice from the VOICE_NAMES keys if the provided voice_name is not valid
+    # Pick a random voice from the VOICE_NAMES keys
     voice_name = random.choice(list(VOICE_NAMES.keys()))
 
     return types.SpeakerVoiceConfig(
         speaker=speaker_name,
         voice_config=types.VoiceConfig(
             prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                voice_name=speaker_name,
+                voice_name=voice_name,  # Fixed: use the actual voice name
             )
         ),
     )
@@ -65,18 +61,36 @@ async def tts_tool(tool_context: ToolContext) -> dict[str, str]:
     chapter_texts = [chapter["chapter_content"] for chapter in tool_context.state["podcast"]["audio_script"]]
     text = "\n".join(chapter_texts)
 
-    speaker_voice_configs = [create_speaker(speaker_name) for speaker_name in speaker_names]
+    # Configure speech based on number of speakers
+    if len(speaker_names) == 1:
+        # Single speaker configuration
+        voice_name = random.choice(list(VOICE_NAMES.keys()))
+        speech_config = types.SpeechConfig(
+            voice_config=types.VoiceConfig(
+                prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                    voice_name=voice_name,
+                )
+            )
+        )
+    else:
+        # Multi-speaker configuration (requires exactly 2 speakers)
+        if len(speaker_names) != 2:
+            # Ensure we have exactly 2 speakers for multi-speaker mode
+            speaker_names = ["Speaker01", "Speaker02"]
+        
+        speaker_voice_configs = [create_speaker(speaker_name) for speaker_name in speaker_names]
+        speech_config = types.SpeechConfig(
+            multi_speaker_voice_config=types.MultiSpeakerVoiceConfig(
+                speaker_voice_configs=speaker_voice_configs,
+            )
+        )
 
     response = client.models.generate_content(
         model="gemini-2.5-flash-preview-tts",
         contents=text,
         config=types.GenerateContentConfig(
             response_modalities=["AUDIO"],
-            speech_config=types.SpeechConfig(
-                multi_speaker_voice_config=types.MultiSpeakerVoiceConfig(
-                    speaker_voice_configs=speaker_voice_configs,
-                )
-            ),
+            speech_config=speech_config,
         ),
     )
 
