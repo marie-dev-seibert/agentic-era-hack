@@ -72,6 +72,12 @@ Deliverable:
 Scripted episode (ready to record):
    - Chapter 0: intro and host greeting, max. 5000 characters.
    - Chapter 1: clear subheading, main content, max. 5000 characters.
+   - Chapter 2: clear subheading, main content, max. 5000 characters.
+   - Chapter 3: clear subheading, main content, max. 5000 characters.
+   - Chapter 4: Fun fact segment (kid-friendly), max. 5000 characters.
+   - Chapter 5: Recap of key points, max. 5000 characters.
+   - Chapter 6: Call-to-action (age-appropriate), max. 5000 characters.
+   - Chapter 7: Outro, max. 2000 characters.
 
 Writing guidelines:
 - Keep sentences short and vocabulary simple; briefly explain any complex term in simple language.
@@ -88,7 +94,7 @@ If user is satisfied, this is your final response and your turn is completed.
 content_agent = Agent(
     input_schema=PodcastInput,
     name="content_creation_agent",
-    description="I am an agent specialized in creating audio content scripts. After audio script creation ask the user if he wants to continue by exiting to your parent agent (the root agent).",
+    description="I am an agent specialized in creating audio content scripts. After audio script creation ask the user if he wants to continue by exiting to the root agent.",
     model="gemini-2.5-flash",
     instruction="Create a podcast based on user's inputs",
     tools=[formatted_output],
@@ -106,9 +112,3 @@ content_agent = Agent(
 
 
 
-#    - Chapter 2: clear subheading, main content, max. 5000 characters.
-#    - Chapter 3: clear subheading, main content, max. 5000 characters.
-#    - Chapter 4: Fun fact segment (kid-friendly), max. 5000 characters.
-#    - Chapter 5: Recap of key points, max. 5000 characters.
-#    - Chapter 6: Call-to-action (age-appropriate), max. 5000 characters.
-#    - Chapter 7: Outro and credits, max. 5000 characters.

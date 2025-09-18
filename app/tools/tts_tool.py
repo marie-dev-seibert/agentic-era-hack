@@ -11,6 +11,8 @@ import google.auth
 import os
 import time
 
+from app.agents.utils.voices import VOICE_NAMES
+
 
 _, project_id = google.auth.default()
 os.environ.setdefault("GOOGLE_CLOUD_PROJECT", project_id)
@@ -29,38 +31,6 @@ class Podcast(BaseModel):
     title: str = Field(description="The title of the podcast")
     speaker_names: list[str] = Field(description="The names of the speakers")
 
-VOICE_NAMES = {
-    "Zephyr": "Bright",
-    "Puck": "Upbeat",
-    "Charon": "Informative",
-    "Kore": "Firm",
-    "Fenrir": "Excitable",
-    "Leda": "Youthful",
-    "Orus": "Firm",
-    "Aoede": "Breezy",
-    "Callirrhoe": "Easy-going",
-    "Autonoe": "Bright",
-    "Enceladus": "Breathy",
-    "Iapetus": "Clear",
-    "Umbriel": "Easy-going",
-    "Algieba": "Smooth",
-    "Despina": "Smooth",
-    "Erinome": "Clear",
-    "Algenib": "Gravelly",
-    "Rasalgethi": "Informative",
-    "Laomedeia": "Upbeat",
-    "Achernar": "Soft",
-    "Alnilam": "Firm",
-    "Schedar": "Even",
-    "Gacrux": "Mature",
-    "Pulcherrima": "Forward",
-    "Achird": "Friendly",
-    "Zubenelgenubi": "Casual",
-    "Vindemiatrix": "Gentle",
-    "Sadachbia": "Lively",
-    "Sadaltager": "Knowledgeable",
-    "Sulafat": "Warm"
-}
 
 def create_speaker(speaker_name: str) -> types.SpeakerVoiceConfig:
     """
@@ -83,7 +53,7 @@ def create_speaker(speaker_name: str) -> types.SpeakerVoiceConfig:
         speaker=speaker_name,
         voice_config=types.VoiceConfig(
             prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                voice_name=voice_name,
+                voice_name=speaker_name,
             )
         ),
     )
@@ -91,15 +61,12 @@ def create_speaker(speaker_name: str) -> types.SpeakerVoiceConfig:
 
 async def tts_tool(tool_context: ToolContext) -> dict[str, str]:
     """Generates text to speech for a podcast."""
-    print("Using TTS Tool")
     speaker_names = tool_context.state["podcast"]["speaker_names"]
     chapter_texts = [chapter["chapter_content"] for chapter in tool_context.state["podcast"]["audio_script"]]
     text = "\n".join(chapter_texts)
 
     speaker_voice_configs = [create_speaker(speaker_name) for speaker_name in speaker_names]
-    print("created speaker voice configs", speaker_voice_configs)
-    
-    print("Now creating response")
+
     response = client.models.generate_content(
         model="gemini-2.5-flash-preview-tts",
         contents=text,
@@ -112,12 +79,12 @@ async def tts_tool(tool_context: ToolContext) -> dict[str, str]:
             ),
         ),
     )
-    print("Response created")
+
     data = response.candidates[0].content.parts[0].inline_data.data
     if data is None:
         raise ValueError("No audio data received from Gemini TTS")
     
-    artifact_name = f"out/generated-audio_{int(time.time())}.wav"
+    artifact_name = f"generated-audio_{int(time.time())}.wav"
     create_wav_file(artifact_name, data)  # Saves the file to current directory
     wav_data = upload_audio_to_gcs(tool_context, data)
     
@@ -129,14 +96,12 @@ async def tts_tool(tool_context: ToolContext) -> dict[str, str]:
 
     return {
         "status": "success",
-        # "audio_url": audio_url,
         "artifact_name": artifact_name,
         "message": "Successfully synthesized speech."
     }
 
 
 def create_wav_file(filename: str, pcm: bytes, channels: int = 1, rate: int = 24000, sample_width: int = 2):
-    print("Creating wav file")
     dirname = os.path.dirname("/out")
     if dirname: 
         os.makedirs(dirname, exist_ok=True)
