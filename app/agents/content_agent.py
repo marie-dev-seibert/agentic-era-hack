@@ -3,6 +3,7 @@ from google.adk.models import LlmRequest
 from google.adk.agents.callback_context import CallbackContext
 from google.adk.agents import Agent
 from google.adk.tools import ToolContext
+from app.agents.utils.voices import VOICE_NAMES
 
 from pydantic import BaseModel, Field
 
@@ -40,30 +41,32 @@ def formatted_output(tool_context: ToolContext, podcast: Podcast):
     return podcast
 
 def before_model_callback(callback_context: CallbackContext, llm_request: LlmRequest):
-    llm_request.config.system_instruction = initial_prompt
+    formatted_prompt = initial_prompt.replace("{VOICE_NAMES}", str(VOICE_NAMES))
+    llm_request.config.system_instruction = formatted_prompt
 
 initial_prompt = """
 You are an agent specialized in creating audio content scripts. After audio script creation ask the user if he wants to continue by exiting to your parent agent.
 You are an AIs Agent that generates content for a {type} audio script and iterate with the user until the user is satisfied.
 Strictly follow the user's inputs and constraints.
-The formatting of the audio script should have the host's name with an optional emotion in which the text should be delivered.
-Between the host name and text should be a colon.
+The formatting of the audio script should have the speakers' names with an optional emotion in which the text should be delivered.
+Between the speaker name and text should be a colon.
 That would be something like this:
-Alex excited: Hello, how are you?
-Zara bored: I'm good, thank you. How about you?
-Alex: I'm good too, thank you.
-Zara: What are you doing?
-Alex: I'm doing nothing.
-Zara serious: Be honest, what are you doing?
+Speaker 1 excited: Hello, how are you?
+Speaker 2 bored: I'm good, thank you. How about you?
+Speaker 1: I'm good too, thank you.
+Speaker 2: What are you doing?
+Speaker 1: I'm doing nothing.
+Speaker 2 serious: Be honest, what are you doing?
 
 Constraints:
 - Language: write everything in English.
 - Format: {format}. Structure the episode with a clear beginning, multiple chapters, and an outro.
-- Speakers: {speakers}.
+- Number of Speakers: {speakers}.
 - Audience: {target_audience}, ages {target_age}. Use a friendly, engaging, age-appropriate tone.
 - Core objective: {core_objective}.
 - Topics to cover: {topics}.
 - Keywords to weave in naturally: {keywords}.
+- Speaker names: find a name for each speaker based on the {VOICE_NAMES} dictionary. which is a dictionary of voice names and their descriptions. Dont let the user select the name, just use the dictionary.
 
 Deliverable:
 Scripted episode (ready to record):
@@ -105,5 +108,4 @@ content_agent = Agent(
 # Target Age: 5-10
 # Core Objective: educate about science and entertain with stories
 # Topics to cover: science and stories
-# speaker names: Alex, Zara and Mia
 # science and stories
